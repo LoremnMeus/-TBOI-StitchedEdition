@@ -1,0 +1,167 @@
+local anm2_data = {
+    Spritesheets = {
+        [0] = "bosses/repentance/ball_of_flies.png",
+    },
+    Animations = {
+        Idle = {
+            FrameNum = 8,
+            Loop = true,
+            LayerAnimations = {
+                [0] = {
+                    {
+                        XPosition = 0,
+                        YPosition = -10,
+                        XScale = 100,
+                        YScale = 100,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 0,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = -10,
+                        XScale = 106,
+                        YScale = 94,
+                        Rotation = 0,
+                        CombinationID = 2,
+                        frame = 1,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = -10,
+                        XScale = 110,
+                        YScale = 90,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 2,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = -10,
+                        XScale = 106,
+                        YScale = 94,
+                        Rotation = 0,
+                        CombinationID = 2,
+                        frame = 3,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = -10,
+                        XScale = 100,
+                        YScale = 100,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 4,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = -10,
+                        XScale = 94,
+                        YScale = 106,
+                        Rotation = 0,
+                        CombinationID = 2,
+                        frame = 5,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = -10,
+                        XScale = 90,
+                        YScale = 110,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 6,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = -10,
+                        XScale = 94,
+                        YScale = 106,
+                        Rotation = 0,
+                        CombinationID = 2,
+                        frame = 7,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                },
+            },
+            RootAnimation = {
+                {
+                    XPosition = 0,
+                    YPosition = 0,
+                    XScale = 100,
+                    YScale = 100,
+                    Rotation = 0,
+                    frame = 0,
+                    Visible = true,
+                    Interpolated = false,
+                },
+            },
+            NullAnimations = {
+                [0] = {
+                    Visible = true,
+                    Frames = {
+                        {
+                            XPosition = 0,
+                            YPosition = -24,
+                            XScale = 100,
+                            YScale = 100,
+                            frame = 0,
+                            Visible = true,
+                        },
+                    },
+                },
+            },
+        },
+    },
+    Layers = {
+        [0] = 0,
+    },
+    AttributeCombinations = {
+        [0] = {
+            [1] = {
+                Height = 48,
+                Width = 48,
+                XCrop = 0,
+                XPivot = 24,
+                YCrop = 0,
+                YPivot = 24,
+            },
+            [2] = {
+                Height = 48,
+                Width = 48,
+                XCrop = 48,
+                XPivot = 24,
+                YCrop = 0,
+                YPivot = 24,
+            },
+        },
+    },
+    AttributeDetail = {
+        [0] = {
+            [1] = {
+                st = 4,
+                ed = 41,
+            },
+            [2] = {
+                st = 8,
+                ed = 38,
+            },
+        },
+    },
+}
+
+return anm2_data

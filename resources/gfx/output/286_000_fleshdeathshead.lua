@@ -1,0 +1,257 @@
+local anm2_data = {
+    Spritesheets = {
+        [0] = "Monsters/Afterbirth/286.000_FleshDeathsHead.png",
+    },
+    Animations = {
+        Idle = {
+            FrameNum = 14,
+            Loop = true,
+            LayerAnimations = {
+                [0] = {
+                    {
+                        XPosition = 0,
+                        YPosition = -17,
+                        XScale = 100,
+                        YScale = 100,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 0,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = -1,
+                        YPosition = -16,
+                        XScale = 100,
+                        YScale = 100,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 2,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 1,
+                        YPosition = -16,
+                        XScale = 100,
+                        YScale = 100,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 3,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = -16,
+                        XScale = 100,
+                        YScale = 100,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 4,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                },
+            },
+            RootAnimation = {
+                {
+                    XPosition = 0,
+                    YPosition = 0,
+                    XScale = 100,
+                    YScale = 100,
+                    Rotation = 0,
+                    frame = 0,
+                    Visible = true,
+                    Interpolated = false,
+                },
+            },
+            NullAnimations = {
+                [0] = {
+                    Visible = true,
+                    Frames = {
+                        {
+                            XPosition = 0,
+                            YPosition = -32,
+                            XScale = 100,
+                            YScale = 100,
+                            frame = 0,
+                            Visible = true,
+                        },
+                    },
+                },
+                [1] = {
+                    Visible = true,
+                    Frames = {
+                    },
+                },
+            },
+        },
+        Death = {
+            FrameNum = 18,
+            Loop = false,
+            LayerAnimations = {
+                [0] = {
+                    {
+                        XPosition = 0,
+                        YPosition = -16,
+                        XScale = 100,
+                        YScale = 100,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 0,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = -16,
+                        XScale = 130,
+                        YScale = 70,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 4,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = -16,
+                        XScale = 70,
+                        YScale = 130,
+                        Rotation = 0,
+                        CombinationID = 2,
+                        frame = 7,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = -16,
+                        XScale = 130,
+                        YScale = 70,
+                        Rotation = 0,
+                        CombinationID = 2,
+                        frame = 10,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = -2,
+                        YPosition = -16,
+                        XScale = 90,
+                        YScale = 110,
+                        Rotation = 0,
+                        CombinationID = 2,
+                        frame = 13,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 2,
+                        YPosition = -16,
+                        XScale = 110,
+                        YScale = 90,
+                        Rotation = 0,
+                        CombinationID = 2,
+                        frame = 15,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = -2,
+                        YPosition = -16,
+                        XScale = 100,
+                        YScale = 100,
+                        Rotation = 0,
+                        CombinationID = 3,
+                        frame = 17,
+                        Visible = false,
+                        Interpolated = true,
+                    },
+                },
+            },
+            RootAnimation = {
+                {
+                    XPosition = 0,
+                    YPosition = 0,
+                    XScale = 100,
+                    YScale = 100,
+                    Rotation = 0,
+                    frame = 0,
+                    Visible = true,
+                    Interpolated = false,
+                },
+            },
+            NullAnimations = {
+                [0] = {
+                    Visible = true,
+                    Frames = {
+                    },
+                },
+                [1] = {
+                    Visible = true,
+                    Frames = {
+                        {
+                            XPosition = 0,
+                            YPosition = -11,
+                            XScale = 100,
+                            YScale = 100,
+                            frame = 0,
+                            Visible = true,
+                        },
+                    },
+                },
+            },
+        },
+    },
+    Layers = {
+        [0] = 0,
+    },
+    AttributeCombinations = {
+        [0] = {
+            [1] = {
+                Height = 32,
+                Width = 32,
+                XCrop = 0,
+                XPivot = 16,
+                YCrop = 0,
+                YPivot = 16,
+            },
+            [2] = {
+                Height = 32,
+                Width = 32,
+                XCrop = 32,
+                XPivot = 16,
+                YCrop = 32,
+                YPivot = 16,
+            },
+            [3] = {
+                Height = 48,
+                Width = 32,
+                XCrop = 64,
+                XPivot = 16,
+                YCrop = 32,
+                YPivot = 16,
+            },
+        },
+    },
+    AttributeDetail = {
+        [0] = {
+            [1] = {
+                st = 3,
+                ed = 31,
+            },
+            [2] = {
+                st = 3,
+                ed = 31,
+            },
+            [3] = {
+                st = 3,
+                ed = 36,
+            },
+        },
+    },
+}
+
+return anm2_data

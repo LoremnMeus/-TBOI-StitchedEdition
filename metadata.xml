@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+    <name>[REP+/REP/RGON]The binding of Isaac: Stitched Edition</name>
+    <directory>stitched_edition</directory>
+    <id>0</id>
+    <description>
+	[h1]以撒的结合：缝合版————解体，然后统合[/h1]
+	神奇的炼金术作用于以撒世界，把所有敌人分解成了碎片，然后重组成了全新的敌人！在这里，你将面对多达 [b]40万种 [/b]前所未有的怪异组合，无数神奇的合成敌人等待你去探索！缝合后的敌人难度将成倍上升，准备好面对这些全新的挑战了吗？
+
+	[b]模组特点：[/b]  
+
+	- [b]独特的敌人组合[/b]
+	- 每个敌人都由两个不同的敌人拼合而成，创造出无数可能组合。
+	- 所有敌人都确保经过了精心的检查和调整，确保表演效果极佳的同时，难度得到少许限制。
+	- 你将直面拥有双重攻击模式和行为的怪物，它们将考验你的反应能力和策略。
+
+	- [b]动态游戏体验[/b]
+	- 前期敌人的组合有限，难度较低。
+	- 随着游戏的进行，将后期敌人与Boss加入合成列表，敌人的组合会变得越来越复杂和难以预测。
+
+	- [b]视觉冲击[/b]
+	- 全新的怪物设计带来了令人震撼的视觉效果，每个拼合怪物都展现出独特的外观和动作，让你的游戏世界焕然一新。
+	- 千变万化的组合模板让你永不生厌！
+
+	- [b]无限可能性[/b]
+	- 可通过控制台指令调整敌人的生成与组合模式，自由调节难度。（可调节的范围相当大，请参考Mod文件夹下的cmd.md文件）
+	- 通过模组设置，允许去除一切敌人生成的限制，让每一次冒险都充满究极的未知和刺激。
+	- 未来还会补充更多指令集合，更多缝合模式，更多敌人等你探索！
+
+	- 本模组是开发Exodus时诞生的意外产物，工作量大到足以喧宾夺主了。为了不破坏Exodus的世界观，就放在这里了。欢迎游玩！
+	- 部分已知缺陷与其他细节内容，请参考Mod文件夹下的Readme.md文件。
+
+	[h1]The binding of Isaac: Stitched Edition————Solve et Coagula[/h1]
+
+	The magical alchemy has taken hold in the world of Isaac, breaking down all enemies into fragments and reassembling them into entirely new foes. Here, you might face over [b]400,000[/b] bizarre combinations that have never been seen before. Countless wondrous composite enemies await your exploration! Are you ready to face these brand-new challenges?
+
+	[b]Module Features:[/b]
+
+	- [b]Unique Enemy Combinations[/b]
+	- Each enemy is a fusion of two different enemies, creating countless possible combinations.
+	- All enemies have been carefully inspected and adjusted, ensuring excellent performance.
+	- You will encounter monsters with dual attack modes and behaviors that will test your reflexes and strategy.
+
+	- [b]Dynamic Gameplay Experience[/b]
+	- As the game progresses, late-stage enemies will be added to the synthesis list, making enemy combinations increasingly complex and unpredictable. You will need to constantly adjust your tactics to deal with these ever-changing opponents.
+
+	- [b]Visual Impact[/b]
+	- Brand new monster designs bring stunning visual effects, with each fused monster showcasing a unique appearance and movements, refreshing your game world.
+
+	- [b]Infinite Possibilities[/b]
+	- By activating the insane mode, all restrictions on enemy generation are removed, making every adventure filled with ultimate unknowns and excitement.
+	- More fusion modes will be launched in the future, with billions of enemies waiting for you to explore!
+
+	- This module was an unexpected byproduct during the development of Exodus. The amount of data generated was quite large, so to avoid disrupting the world of Exodus, it has been placed here. Welcome to play!
+
+	</description>
+    <version>1.0.0</version>
+    <visibility>Public</visibility>
+    <tag id="Lua"/>
+    <tag id="Enemies"/>
+    <tag id="Graphics"/>
+</metadata>

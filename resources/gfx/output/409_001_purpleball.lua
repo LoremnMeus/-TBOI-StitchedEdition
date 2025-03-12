@@ -1,0 +1,142 @@
+local anm2_data = {
+    Spritesheets = {
+        [0] = "Effects/Effect_088_DarkSmoke.png",
+    },
+    Animations = {
+        Idle = {
+            FrameNum = 16,
+            Loop = true,
+            LayerAnimations = {
+                [0] = {
+                    {
+                        XPosition = 0,
+                        YPosition = 0,
+                        XScale = 100,
+                        YScale = 100,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 0,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = 1,
+                        XScale = 100,
+                        YScale = 102,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 2,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = 0,
+                        XScale = 109,
+                        YScale = 99,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 4,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = -1,
+                        XScale = 109,
+                        YScale = 99,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 6,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = -1,
+                        XScale = 100,
+                        YScale = 100,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 8,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = -1,
+                        XScale = 100,
+                        YScale = 102,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 10,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = -1,
+                        XScale = 100,
+                        YScale = 100,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 12,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                    {
+                        XPosition = 0,
+                        YPosition = 0,
+                        XScale = 109,
+                        YScale = 99,
+                        Rotation = 0,
+                        CombinationID = 1,
+                        frame = 14,
+                        Visible = true,
+                        Interpolated = true,
+                    },
+                },
+            },
+            RootAnimation = {
+                {
+                    XPosition = 0,
+                    YPosition = 0,
+                    XScale = 100,
+                    YScale = 100,
+                    Rotation = 0,
+                    frame = 0,
+                    Visible = true,
+                    Interpolated = false,
+                },
+            },
+            NullAnimations = {
+            },
+        },
+    },
+    Layers = {
+        [0] = 0,
+    },
+    AttributeCombinations = {
+        [0] = {
+            [1] = {
+                Height = 48,
+                Width = 48,
+                XCrop = 48,
+                XPivot = 24,
+                YCrop = 0,
+                YPivot = 24,
+            },
+        },
+    },
+    AttributeDetail = {
+        [0] = {
+            [1] = {
+                st = 13,
+                ed = 34,
+            },
+        },
+    },
+}
+
+return anm2_data
