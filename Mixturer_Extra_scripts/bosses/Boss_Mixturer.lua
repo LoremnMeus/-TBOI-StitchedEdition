@@ -176,7 +176,7 @@ function item.find_entity(base, search_type, search_variant, search_subtype)
 			return entity
 		end
 	end
-    return {}
+    return {None = true,}
 end
 
 function item.get_id_level(params)
@@ -225,6 +225,24 @@ Function = function(_)
 end,
 })
 
+--{lev = lev,forcetag = forcetag,}
+function item.check_succ(v,params)
+	v = v or {}
+	params = params or {}
+	local succ = true 
+	for _ = 1,1 do
+		if v.NotSpawn then succ = false break end
+		--NoMulti参数意味着强制防止任何复数敌人拼在一起
+		if v.id == params.v.id and v.NotSelf then succ = false break end
+		if (v.is_multi) and (params.v.NoisMulti or params.NoisMulti) then succ = false break end
+		if (v.is_multi or v.can_multi) and (params.v.NoMulti or params.NoMulti) then succ = false break end
+		if v.is_multi and (params.v.is_multi or (params.v.can_multi)) then succ = false break end
+		if v.can_multi and (params.v.is_multi or params.v.can_multi) then succ = false break end
+		if auxi.check_if_any(params.special,v) then succ = false break end
+	end
+	return succ
+end
+
 function item.search_in(base,params)
 	if type(base) == "string" and item.targets[base] then base = item.targets[base] end
 	params = params or {}
@@ -232,22 +250,6 @@ function item.search_in(base,params)
 	--print(tostring(params.v.type).." "..tostring(params.v.is_multi))
 	-- Get control data
     local control = save.ControlData or {}
-
-	if not params.skip then
-		-- Handle mixforce first (highest priority)
-		if control.mixforce and #control.mixforce > 0 and math.random() < (control.mixforcechance or 1) then
-			return base[auxi.random_in_weighed_table(control.mixforce,params.rng).id or 1]
-		end
-	
-		control.mixsameinroom = control.mixsameinroom or {chance = 0,count = 1,}
-		if control.mixsameinroom.chance > 0 and math.random() < control.mixsameinroom.chance and #(save.elses[item.own_key.."RoomTarget"]) > 0 then
-			return base[auxi.choose2(save.elses[item.own_key.."RoomTarget"])]
-		end
-		control.mixsameinlevel = control.mixsameinlevel or {chance = 0,count = 1,}
-		if control.mixsameinlevel.chance > 0 and math.random() < control.mixsameinlevel.chance and #(save.elses[item.own_key.."LevelTarget"]) > 0 then
-			return base[auxi.choose2(save.elses[item.own_key.."LevelTarget"])]
-		end
-	end
 
 	local forcetag = nil
     if control.mixforceboss and control.mixforceboss > 0 and math.random() < control.mixforceboss then
@@ -281,11 +283,50 @@ function item.search_in(base,params)
 
 	local hardLevel = control.mixhardlevel or 0
     local baseLevel = control.mixbaselevel or -999
+
+	if not params.skip then
+		-- Handle mixforce first (highest priority)
+		if control.mixforce and #control.mixforce > 0 and math.random() < (control.mixforcechance or 1) then
+			local tbl = {}
+			for u,v in pairs(control.mixforce) do
+				local succ = item.check_succ(item.targets["Left"][v.id],params)
+				if succ then table.insert(tbl,v) end
+			end
+			if #tbl > 0 then
+				return base[auxi.random_in_weighed_table(tbl,params.rng).id or 1]
+			end
+		end
+	
+		control.mixsameinroom = control.mixsameinroom or {chance = 0,count = 1,}
+		if control.mixsameinroom.chance > 0 and math.random() < control.mixsameinroom.chance and #(save.elses[item.own_key.."RoomTarget"]) > 0 then
+			local tbl = {}
+			for u,v in pairs(save.elses[item.own_key.."RoomTarget"]) do
+				local succ = item.check_succ(item.targets["Left"][v],params)
+				if succ then table.insert(tbl,{id = v,}) end
+			end
+			if #tbl > 0 then
+				return base[auxi.random_in_weighed_table(tbl,params.rng).id or 1]
+			end
+		end
+		control.mixsameinlevel = control.mixsameinlevel or {chance = 0,count = 1,}
+		if control.mixsameinlevel.chance > 0 and math.random() < control.mixsameinlevel.chance and #(save.elses[item.own_key.."LevelTarget"]) > 0 then
+			local tbl = {}
+			for u,v in pairs(save.elses[item.own_key.."LevelTarget"]) do
+				local succ = item.check_succ(item.targets["Left"][v],params)
+				if succ then table.insert(tbl,{id = v,}) end
+			end
+			if #tbl > 0 then
+				return base[auxi.random_in_weighed_table(tbl,params.rng).id or 1]
+			end
+		end
+	end
+
+
 	local tbl = {}
 	for u,v in pairs(base) do
-		local succ = true 
+		local succ = item.check_succ(v,params)
 		local lv0 = (v.level or 1)
-        -- Apply mixtaglevel adjustments
+		-- Apply mixtaglevel adjustments
 		for tag, offset in pairs(control.mixtaglevel or {boss = 2,sin = -1,}) do
 			local succc = false
 			if v[tag] then succc = true end
@@ -293,37 +334,17 @@ function item.search_in(base,params)
 			if tag == "noboss" and v.uid == 2 then succc = true end
 			if succc then lv0 = lv0 + offset end
 		end
-        -- Check level constraints
-		if lv0 > (lev + hardLevel) or lv0 < (lev + baseLevel) then
-            succ = false
-        end
-		
+		-- Check level constraints
+		if lv0 > math.max(1,(lev + hardLevel)) or lv0 < math.min(5,(lev + baseLevel)) then
+			succ = false
+		end
 		if succ and forcetag then
-            local isBoss = v.uid == 1
+			local isBoss = v.uid == 1
 			if forcetag == "boss" then
 				if isBoss then else succ = false end
 			elseif forcetag == "noboss" then
 				if isBoss then succ = false else end
 			elseif v[forcetag] then else succ = false end
-		end
-
-		if succ then
-			for _ = 1,1 do
-				if v.NotSpawn then succ = false break end
-				if params.keep_level then		--根据楼层进行测定
-					if type(params.keep_level) == "function" then
-						if auxi.check_if_any(params.keep_level,lv0,params) ~= true then succ = false break end
-					elseif type(params.keep_level) == "number" then
-						if lev + (params.keep_level) < lv0 then succ = false break end
-					end
-				end
-				--NoMulti参数意味着强制防止任何复数敌人拼在一起
-				if v.id == params.v.id and v.NotSelf then succ = false break end
-				if (v.is_multi or v.can_multi) and (params.v.NoMulti or params.NoMulti) then succ = false break end
-				if v.is_multi and (params.v.is_multi or (params.v.can_multi)) then succ = false break end
-				if v.can_multi and (params.v.is_multi or params.v.can_multi) then succ = false break end
-				if auxi.check_if_any(params.special,v) then succ = false break end
-			end
 		end
 		if succ then 
 			local wei = item.strength2weigh(v,lv0,v.strength or 50)
@@ -334,14 +355,15 @@ function item.search_in(base,params)
 	return base[(auxi.random_in_weighed_table(tbl,params.rng) or {}).id or 8]
 end
 
-function item.fast_search(basestr, search_type, search_variant, search_subtype)
+function item.fast_search(basestr, search_type, search_variant, search_subtype,only_fast)
 	local tname = tostring(search_type).."."..tostring(search_variant or 0).."."..tostring(search_subtype or 0)
 	if basestr == nil then basestr = "Left" end
 	if item.name_tgs[tname] and item.name_tgs[tname][basestr] then
 		return item.name_tgs[tname][basestr]
 	end
+	if only_fast then return nil end
 	local ret = item.find_entity(basestr, search_type, search_variant, search_subtype)
-	if item.name_tgs[tname] then item.name_tgs[tname][basestr] = ret end
+	if not ret.None and item.name_tgs[tname] then item.name_tgs[tname][basestr] = ret end
 	return ret
 end
 
@@ -353,7 +375,7 @@ function item.process_entity(entity,uid)
 		for u,v in pairs(entity) do tg[u] = v end
 		tg.uid = uid
 		tg.id = #item.targets.Left + 1
-		tg.anm2 = item.prefix1 .. entity.name .. "_left.anm2"
+		tg.anm2 = item.prefix1 .. (entity.anm2_name or entity.name) .. "_left.anm2"
 		tg.anm2_data = require(item.prefix2 .. entity.name:gsub("%.", "_"))
 		table.insert(item.targets.Left,tg)
 		item.name_tgs[tname]["Left"] = tg
@@ -363,7 +385,7 @@ function item.process_entity(entity,uid)
 		for u,v in pairs(entity) do tg[u] = v end
 		tg.uid = uid
 		tg.id = #item.targets.Right + 1
-		tg.anm2 = item.prefix1 .. entity.name .. "_right.anm2"
+		tg.anm2 = item.prefix1 .. (entity.anm2_name or entity.name) .. "_right.anm2"
 		tg.anm2_data = require(item.prefix2 .. entity.name:gsub("%.", "_"))
 		table.insert(item.targets.Right,tg)
 		item.name_tgs[tname]["Right"] = tg
@@ -384,10 +406,6 @@ end
 table.insert(item.ToCall,#item.ToCall + 1,{CallBack = ModCallbacks.MC_ENTITY_TAKE_DMG, params = nil,
 Function = function(_,ent,amt,flag,source,cooldown)
 	local d = ent:GetData()
-	print("Damage")
-	print(amt)
-	print(flag)
-	print(cooldown)
     if d[item.own_key.."linkee"] and not ((cooldown == 666) or (amt == 1000 and flag == 0 and cooldown == 30)) then 
         return false
     end
@@ -455,6 +473,7 @@ Function = function(_,ent,col,low)
 	local d = ent:GetData()
     if d[item.own_key.."linkee"] then 
 		local info = item.targets["Left"][d[item.own_key.."linkee"].infoid or 0]
+		info = item.protect_delirium(ent,"Left",info)
 		if info then 
 			local ret = auxi.check_if_any(info.special_collision,ent,col,low) 
 			if ret ~= nil then return ret.ret end
@@ -483,12 +502,12 @@ Function = function(_,ent)
 			d[item.own_key.."linkee"].linker = nil
 		end
 		if auxi.check_all_exists(ent) then 
+			local info = item.targets[d[item.own_key.."linkee"].tg or "Left"][d[item.own_key.."linkee"].infoid]
+			info = item.protect_delirium(ent,d[item.own_key.."linkee"].tg or "Left",info)
 			if auxi.check_all_exists(d[item.own_key.."linkee"].linker) ~= true then
-				--print("Try Kill "..ent.Type.." "..ent.Variant.." "..ent.SubType)
 				local linker_exists = false
 				if d[item.own_key.."linkee"].linker and d[item.own_key.."linkee"].linker:Exists() then linker_exists = true end
 				if d[item.own_key.."GridCollision"] then Attribute_holder.try_rewind_attribute(ent,"GridCollisionClass",d[item.own_key.."GridCollision"]) d[item.own_key.."GridCollision"] = nil end
-				local info = item.targets[d[item.own_key.."linkee"].tg or "Left"][d[item.own_key.."linkee"].infoid]
 				if info then 
 					for uu,vv in pairs(item.remove_flags_tg) do
 						item.base_set_flag(ent,uu,vv,false,d)
@@ -503,7 +522,7 @@ Function = function(_,ent)
 						local overlayanim = vs:GetOverlayAnimation() local overlayfr = vs:GetOverlayFrame()
 						vs:Load(real_anm2,true) 
 						vs:Play(anim,true) vs:SetFrame(fr) if finished then vs:Update() end 
-						if overlayanim ~= "" and not info.NoOverlayonKill then vs:PlayOverlay(overlayanim,true) vs:SetOverlayFrame(overlayfr) end
+						if overlayanim ~= "" and not info.NoOverlayonKill then vs:PlayOverlay(overlayanim,true) vs:SetOverlayFrame(overlayanim,overlayfr) end
 						ent.Visible = true
 						ent.Size = d[item.own_key.."linkee"].size or ent.Size
 						ent:ClearEntityFlags(item.friend_flag | EntityFlag.FLAG_PERSISTENT)
@@ -536,11 +555,15 @@ Function = function(_,ent)
 					local release = info.should_release
 					if not linker_exists then release = true end
 					if ent:Exists() and release and not info.NoKill then
-						local s = ent:GetSprite() local anim = s:GetAnimation()
-						local fr = s:GetFrame() local finished = s:IsFinished(anim) 
-						s:Load("gfx/"..info.name..".anm2",true) s.Scale = Vector(1,1) s.Offset = Vector(0,0) s.Rotation = 0
-						s:Play(anim,true) s:SetFrame(fr) if finished then s:Update() end
+						local real_anm2 = "gfx/" .. info.name .. ".anm2"
+						local vs = ent:GetSprite()
+						local anim = vs:GetAnimation() local fr = vs:GetFrame() local finished = vs:IsFinished(anim)
+						local overlayanim = vs:GetOverlayAnimation() local overlayfr = vs:GetOverlayFrame()
+						vs:Load(real_anm2,true) 
+						vs:Play(anim,true) vs:SetFrame(fr) if finished then vs:Update() end 
+						if overlayanim ~= "" and not info.NoOverlayonKill then vs:PlayOverlay(overlayanim,true) vs:SetOverlayFrame(overlayanim,overlayfr) end
 						ent.Visible = true
+						ent.Size = (d[item.own_key.."rlinkee"] or d[item.own_key.."linkee"] or {}).size or ent.Size
 					end
 					if ent:Exists() and d[item.own_key.."linkee"] then 
 						d[item.own_key.."rlinkee"] = d[item.own_key.."rlinkee"] or d[item.own_key.."linkee"] 
@@ -550,7 +573,6 @@ Function = function(_,ent)
 				else
 				end
 			end
-			local info = item.targets[d[item.own_key.."linkee"].tg or "Left"][d[item.own_key.."linkee"].infoid]
 			if info then auxi.check_if_any(info.special_on_own_update,ent,info) end
 		else
 			if auxi.check_all_exists(d[item.own_key.."linkee"].linker) ~= true then 
@@ -558,8 +580,18 @@ Function = function(_,ent)
 				d[item.own_key.."linkee"] = nil 
 			end
 		end
+	elseif ent:ToNPC() then
+		if d[item.own_key.."check_linked"] == nil then 
+			d[item.own_key.."check_linked"] = {}
+			d[item.own_key.."check_linked"].info = item.fast_search("Left",ent.Type,ent.Variant,ent.SubType,true)
+		end
+		local info = d[item.own_key.."check_linked"].info
+		if info and not d[item.own_key.."check_linked"].Lock then
+			d[item.own_key.."check_linked"].Lock = true
+			auxi.check_if_any(info.special_All,ent,info)
+			d[item.own_key.."check_linked"].Lock = nil
+		end
 	end
-
 end,
 })
 
@@ -595,6 +627,7 @@ Function = function(_,ent,amt,flag,source,cooldown)
 			if d[item.own_key.."effect"] and d[item.own_key.."effect"][u] and auxi.check_all_exists(d[item.own_key.."effect"][u].ent) then
 				local this = d[item.own_key.."effect"][u]
 				local info = item.targets[u][this.infoid or 0]
+				info = item.protect_delirium(this.ent,u,info)
 				if info then 
 					local ret = auxi.check_if_any(info.special_damage,ent,amt,flag,source,cooldown,this.ent)
 					if ret ~= nil then return ret end
@@ -633,6 +666,7 @@ Function = function(_,ent,amt,flag,source,cooldown)
 			if d[item.own_key.."effect"] and d[item.own_key.."effect"][u] and auxi.check_all_exists(d[item.own_key.."effect"][u].ent) then
 				local this = d[item.own_key.."effect"][u]
 				local info = item.targets[u][this.infoid or 0]
+				info = item.protect_delirium(this.ent,u,info)
 				if info then
 					auxi.check_if_any(info.on_damage,ent,amt,flag,source,cooldown,this.ent)
 				end
@@ -814,6 +848,7 @@ function item.deal_with_mixture(ent)
 			local vv = d[item.own_key.."effect"][u]
 			if vv.ent:GetSprite():GetAnimation() == "" then return end		--有些敌人会有这个动画
 			local info = v[vv.infoid]
+			info = item.protect_delirium(vv.ent,u,info)
 			if info.check_all_type and (vv.ent.Type ~= info.type or vv.ent.Variant ~= info.variant or vv.ent.SubType ~= info.subtype) then
 				auxi.check_if_any(info.special_on_uncheck,vv.ent)
 				--print(vv.ent.Type.." "..vv.ent.Variant.." "..vv.ent.SubType)
@@ -1295,8 +1330,8 @@ function item.deal_with_mixture(ent)
 			local delta = Isaac.WorldToScreen(ent.Position + ent.PositionOffset) - Isaac.WorldToScreen(vv.ent.Position) + room:GetRenderScrollOffset() + Game().ScreenShakeOffset		--还缺水下版本
 			local render_offset = Isaac.WorldToScreen(ent.Position + ent.PositionOffset) + offset --+ room:GetRenderScrollOffset() + Game().ScreenShakeOffset
 			if auxi.is_under_water() then
-				render_offset = render_offset + auxi.GetWaterRenderOffset() + - 1 * room:GetRenderScrollOffset()
-				delta = delta + auxi.GetWaterRenderOffset() +- 1 * room:GetRenderScrollOffset()
+				render_offset = render_offset + auxi.GetWaterRenderOffset() - room:GetRenderScrollOffset()
+				delta = delta + auxi.GetWaterRenderOffset() - room:GetRenderScrollOffset()
 			end
 			if visibility ~= false then
 				auxi.check_if_any(info.pre_render,vv.ent,offset + delta,render_offset,info)
@@ -1314,9 +1349,9 @@ function item.deal_with_mixture(ent)
 			local delta = Isaac.WorldToScreen(ent.Position + ent.PositionOffset) - Isaac.WorldToScreen(vv.ent.Position + vv.ent.PositionOffset) + room:GetRenderScrollOffset() + Game().ScreenShakeOffset
 			local render_offset = Isaac.WorldToScreen(ent.Position + ent.PositionOffset) + offset --+ room:GetRenderScrollOffset() + Game().ScreenShakeOffset
 			if auxi.is_under_water() then
-				render_offset = render_offset + auxi.GetWaterRenderOffset() + - 1 * room:GetRenderScrollOffset()
-				delta = delta + auxi.GetWaterRenderOffset() + - 1 * room:GetRenderScrollOffset()--Vector(0,.Y) 
-				delta = delta + (TEST_VAL1 or -1) * vs.Offset
+				render_offset = render_offset + auxi.GetWaterRenderOffset() - room:GetRenderScrollOffset()
+				delta = delta + auxi.GetWaterRenderOffset() - room:GetRenderScrollOffset()--Vector(0,.Y) 
+				delta = delta - vs.Offset
 				vs.Offset = Vector(0,0)
 				--+ Vector(0,(TEST_VAL1 or 0) * vs.Offset.Y + (TEST_VAL2 or 0) * b_offset.Y + (TEST_VAL3 or 0) * (vd[item.own_key.."TMPrecord"] or {}).delta_y)		--
 				--print(vs.Offset)
@@ -1406,10 +1441,11 @@ function item.generate_mixture(ent,params)		--params.tg：ent作为左/右出现
 	local r_dir = "Left" if r_dir == i_dir then r_dir = "Right" end
 	local iinfo = item.fast_search(i_dir,ent.Type,ent.Variant,ent.SubType)
 	local succ = iinfo.id
-	if succ and not iinfo.DontSpawn then
+	if succ and not auxi.check_if_any(iinfo.DontSpawn,ent,iinfo) then
 		item.protect_champion(ent)
 		local subtype = 0
 		if ent:IsBoss() then subtype = 1 end
+		--print("Try Mix")
 		local q = Isaac.Spawn(item.entity_type,item.entity,subtype,ent.Position,Vector(0,0),nil):ToNPC() 
 		local d = q:GetData() 
 		d[item.own_key.."effect"] = {no_conduct = params.no_conduct,spawn_once = params.spawn_once,no_conduct_all = params.no_conduct_all,nomainspawn = params.nomainspawn,max_mul = params.max_mul,mul = params.mul,} 
@@ -1441,12 +1477,13 @@ end
 --l local danger = require("Mixturer_Extra_scripts.bosses.Danger_Data") local mix = require("Mixturer_Extra_scripts.bosses.Boss_Mixturer") local base_info = {Type = 67,Variant = 0,SubType = 0,} local danger_data = danger.check_data(base_info) q = danger.spawn_it_now(Game():GetPlayer(0),danger_data,nil,nil,{Loadfrominfo = base_info,})[1] local info = mix.targets["Left"][mix.find_entity(20,0,0).id] local qs = q:GetSprite() local anim = qs:GetAnimation() if info.anm2 then qs:Load(info.anm2,true) qs:Play(anim,true) end
 
 --l local mix = require("Mixturer_Extra_scripts.bosses.Boss_Mixturer") local q = Isaac.Spawn(mix.entity_type,mix.entity,0,Vector(160,280),Vector(0,0),nil):ToNPC() local d = q:GetData() d[mix.own_key.."effect"] = {spawn_once = true,max_mul = 7,} d[mix.own_key.."effect"]["Right"] = {infoid = mix.find_entity(240,0,0).id,} d[mix.own_key.."effect"]["Left"] = {infoid = mix.find_entity(18).id,} 
---l local tgs = Isaac.GetRoomEntities() for u,v in pairs(tgs) do if v.Type > 10 and v.Type < 1000 then print(v.Type.." "..v.Variant.." "..v.SubType) v = v:ToNPC() print(v.State) print(v:GetSprite():GetAnimation()) print(v.I1.." "..v.I2) print(v.V1) print(v.V2) print(v:GetSprite():GetFrame()) print(v.TargetPosition) print(v:GetEntityFlags()) end end
+--l local tgs = Isaac.GetRoomEntities() for u,v in pairs(tgs) do if v.Type == 27 then print(v.Type.." "..v.Variant.." "..v.SubType) v = v:ToNPC() print(v.State) print(v:GetSprite():GetAnimation()) print(v.I1.." "..v.I2) print(v.V1) print(v.V2) print(v:GetSprite():GetFrame()) print(v.TargetPosition) print(v.InitSeed) end end
 table.insert(item.ToCall,#item.ToCall + 1,{CallBack = ModCallbacks.MC_NPC_UPDATE, params = item.entity_type,
 Function = function(_,ent)
 	if ent.Variant == item.entity then
 		local s = ent:GetSprite()
 		local d = ent:GetData()
+		if d[item.own_key.."effect"] == nil then print("Found Missing") if ent.FrameCount > 10 then ent:Remove() end return end
 		d[item.own_key.."effect"] = d[item.own_key.."effect"] or {spawn_once = true,}
 		ent:ClearEntityFlags(EntityFlag.FLAG_APPEAR)
 		local only_count = false
@@ -1489,10 +1526,15 @@ Function = function(_,ent)
 							item.time_free(this.ent)
 						end
 					end
+					--if info.only_count then print("Removed") end
 					ent.Variant = 0 ent:Remove() return
 				end
+				--print("Try Generate "..ent.InitSeed)
 				item.invisible_flag = true
-				if d[item.own_key.."effect"][u].ent then d[item.own_key.."effect"][u].ent:Remove() end
+				if d[item.own_key.."effect"][u].ent then 
+					--print("Try Remove")
+					d[item.own_key.."effect"][u].ent:Remove() 
+				end
 				local tp = info.type local vr = info.variant or 0 local st = info.subtype or 0
 				local base_info = {Type = tp,Variant = vr,SubType = st,}
 				local danger_data = danger.check_data(base_info)
@@ -1570,6 +1612,7 @@ Function = function(_,ent)
 			if info.ProtectMyData then 
 				thisd = d[item.own_key.."effect"][u].Data 
 				d[item.own_key.."effect"][u].Deli = true
+				d[item.own_key.."effect"].Deli = true
 			end
 			if thisd[item.own_key.."animshift"] == nil then
 				local q = this.ent
@@ -1657,6 +1700,7 @@ Function = function(_,ent)
 			for u,v in pairs(item.targets) do
 				local ve = d[item.own_key.."effect"][u]
 				local info = v[d[item.own_key.."effect"][u].infoid]
+				info = item.protect_delirium(ve.ent,u,info)
 				local basehitpoints = ve.ent.MaxHitPoints
 				if info.HitPoints then basehitpoints = auxi.check_if_any(info.HitPoints,basehitpoints,ve.ent) or basehitpoints end
 				local mult = 1
@@ -1723,6 +1767,7 @@ Function = function(_,ent)
 		local tg = d[item.own_key.."effect"][baseinfo.tg]
 		local tgname = baseinfo.tg
 		local tginfo = item.targets[baseinfo.tg][tg.infoid]
+		tginfo = item.protect_delirium(tg.ent,baseinfo.tg,tginfo)
 		local largest_order = item.get_order(tginfo.order,tg.ent,baseinfo.tg,tginfo)
 		d[item.own_key.."Updated"] = true
 		d[item.own_key.."swap_counter"] = (d[item.own_key.."swap_counter"] or 0) + 1
@@ -1754,6 +1799,7 @@ Function = function(_,ent)
 			local this = d[item.own_key.."effect"][u]
 			local thisd = this.ent:GetData()
 			local thisinfo = item.targets[u][this.infoid]
+			thisinfo = item.protect_delirium(this.ent,u,thisinfo)
 			local thisorder = item.get_order(thisinfo.order,this.ent,u,thisinfo)
 			local this_order_rnd = thisorder * 5 + this.ent:GetData()[item.own_key.."rnd"]
 			if -1 <= thisorder and thisorder <= 0 then 
@@ -1823,7 +1869,9 @@ Function = function(_,ent)
 			end
 		end
 		d[item.own_key.."effect"]["baseinfo"].tg = tgname
-		d[item.own_key.."recordposoffset"] = (d[item.own_key.."recordposoffset"] or tg.ent.PositionOffset) * 0.9 + 0.1 * tg.ent.PositionOffset		--这里不对
+		--print(tg.ent.PositionOffset * 0.1)
+		d[item.own_key.."recordposoffset"] = (d[item.own_key.."recordposoffset"] or tg.ent.PositionOffset) * 0.9 + tg.ent.PositionOffset * 0.1		--这里不对
+		--非RGON情况下，不能做num *const vec
 		d[item.own_key.."posoffset"] = tg.ent.PositionOffset
 		
 		local baseinfo = d[item.own_key.."effect"]["baseinfo"]
@@ -1855,6 +1903,7 @@ Function = function(_,ent)
 				local this = d[item.own_key.."effect"][u]
 				local thisd = this.ent:GetData()
 				local info = v[this.infoid]
+				info = item.protect_delirium(this.ent,u,info)
 				auxi.check_if_any(info.special,this.ent,ent,true,info)
 				this.ent:AddEntityFlags(i_flag)
 				--this.ent:ClearEntityFlags(i_flag)

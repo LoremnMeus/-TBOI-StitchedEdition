@@ -171,14 +171,22 @@ function item.is_in_the_same_npc_group(e1,e2)
 end
 
 function item.update_npc(ent,tbl,i_flag)
+	local tab = {}
 	tbl = tbl or auxi.getallenemies()
 	i_flag = i_flag or (EntityFlag.FLAG_FRIENDLY | EntityFlag.FLAG_PERSISTENT | EntityFlag.FLAG_CHARM)
 	for u,v in pairs(tbl) do if auxi.check_for_the_same(v,ent) ~= true then 
+		if v:ToNPC() then
+			tab[v] = v:ToNPC().CanShutDoors
+			v:ToNPC().CanShutDoors = false
+		end
 		v:AddEntityFlags(i_flag) 
 	end end
 	ent:Update() 
 	for u,v in pairs(tbl) do if auxi.check_for_the_same(v,ent) ~= true then 
 		v:ClearEntityFlags(i_flag)
+		if v:ToNPC() then
+			v:ToNPC().CanShutDoors = tab[v]
+		end
 	end end
 end
 

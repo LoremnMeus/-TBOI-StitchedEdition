@@ -419,13 +419,17 @@ local item = {
 						end
 					end
 					local grid = Isaac.GridSpawn(GridEntityType.GRID_PIT,0,room:GetGridPosition(room:GetGridIndex(pos)),true):ToPit()
-					grid:UpdateCollision()
-					grid:PostInit()
+					if grid then
+						grid:UpdateCollision()
+						grid:PostInit()
+					end
 					if cnt == 0 then 
 						local pos1 = room:FindFreeTilePosition(pos,40)
 						local grid = Isaac.GridSpawn(GridEntityType.GRID_PIT,0,room:GetGridPosition(room:GetGridIndex(pos1)),true):ToPit()
-						grid:UpdateCollision()
-						grid:PostInit()
+						if grid then
+							grid:UpdateCollision()
+							grid:PostInit()
+						end
 						auxi.update_related_grids(grid)
 					end
 				end,},
@@ -441,11 +445,14 @@ local item = {
 						end
 					end
 					local grid = Isaac.GridSpawn(GridEntityType.GRID_PIT,0,room:GetGridPosition(room:GetGridIndex(pos)),true):ToPit()
-					grid:UpdateCollision()
-					grid:PostInit()
+					if grid then
+						grid:UpdateCollision()
+						grid:PostInit()
+					end
 				end,},
 				{Type = 837,Variant = 0,special = function(pos)
 					local room = Game():GetRoom()
+					--[[
 					local width = room:GetGridWidth()
 					local height = room:GetGridHeight()
 					for i = 0,width do
@@ -455,9 +462,12 @@ local item = {
 							if gent and gent:ToPit() then return end
 						end
 					end
+					--]]
 					local grid = Isaac.GridSpawn(GridEntityType.GRID_PIT,0,room:GetGridPosition(room:GetGridIndex(pos)),true):ToPit()
-					grid:UpdateCollision()
-					grid:PostInit()
+					if grid then
+						grid:UpdateCollision()
+						grid:PostInit()
+					end
 				end,},
 			},
 			unbreakable = {
@@ -515,8 +525,20 @@ local item = {
 				{Type = 19,Variant = 0,SubType = {0,1,2,},mul = {2,3,4,},is_multi = true,special = function(pos,vs) for u,v in pairs(vs) do v:Update() end end,},
 				{Type = 19,Variant = 2,SubType = 0,mul = {2,3,4,},is_multi = true,special = function(pos,vs)
 					for u,v in pairs(vs) do v:Update() end
-					local q = Isaac.Spawn(809,0,0,pos,Vector(0,0),nil):ToNPC() 
-					q.EntityCollisionClass = 0 end,
+					local tgs = auxi.getothers(nil,809)
+					local room = Game():GetRoom()
+					local tpos = room:GetClampedPosition(room:FindFreeTilePosition(pos,40) + Vector(0,-40),40)
+					if #tgs <= 5 then
+						local ent = Isaac.Spawn(809,0,0,tpos,Vector(0,0),nil):ToNPC() 
+						local pos = auxi.Vector2Table(ent.Position)
+						ent.Position = Vector(0,0) ent:Update()
+						local tgs = auxi.getothers(nil,5,41,0) 
+						for u,v in pairs(tgs) do if auxi.check_for_the_same(v.SpawnerEntity,ent) then v:Remove() end end
+						ent.TargetPosition = auxi.ProtectVector(pos)
+						ent.Position = auxi.ProtectVector(pos)
+						ent.EntityCollisionClass = 0 
+					end
+				end,
 				},	--不会卡住其他东西了
 				{Type = 65,Variant = 10,SubType = {0,1,},},
 				{Type = 79,Variant = 0,SubType = {0,1,2,},is_multi = true,should_load = function(v,tp,vr,st) 
@@ -543,7 +565,8 @@ local item = {
 				{Type = 28,Variant = 1,SubType = 0,mul = 3,is_multi = true,},
 				{Type = 28,Variant = 2,SubType = {0,1,},mul = 3,is_multi = true,},
 				{Type = 36,Variant = 0,SubType = {0,1,},},
-				{Type = 99,Variant = 0,SubType = {0,1,2,},is_multi = true,},
+				{Type = 99,Variant = 0,SubType = {0,2,},},
+				{Type = 99,Variant = 0,SubType = 1,should_load = true,is_multi = true,},
 				{Type = 262,Variant = 0,SubType = {0,1,2,},},
 				{Type = 263,Variant = 0,SubType = {0,1,2,},},
 				{Type = 402,Variant = 0,SubType = {0,1,},},
@@ -752,8 +775,19 @@ local item = {
 				{Type = 272,Variant = 1,SubType = 0,},
 				{Type = 19,Variant = 3,SubType = 0,mul = {2,3,4,},is_multi = true,special = function(pos,vs)
 					for u,v in pairs(vs) do v:Update() end
-					local q = Isaac.Spawn(809,0,0,pos,Vector(0,0),nil):ToNPC() 
-					q.EntityCollisionClass = 0
+					local tgs = auxi.getothers(nil,809)
+					local room = Game():GetRoom()
+					local tpos = room:GetClampedPosition(room:FindFreeTilePosition(pos,40) + Vector(0,-40),40)
+					if #tgs <= 5 then
+						local ent = Isaac.Spawn(809,0,0,tpos,Vector(0,0),nil):ToNPC() 
+						local pos = auxi.Vector2Table(ent.Position)
+						ent.Position = Vector(0,0) ent:Update()
+						local tgs = auxi.getothers(nil,5,41,0) 
+						for u,v in pairs(tgs) do if auxi.check_for_the_same(v.SpawnerEntity,ent) then v:Remove() end end
+						ent.TargetPosition = auxi.ProtectVector(pos)
+						ent.Position = auxi.ProtectVector(pos)
+						ent.EntityCollisionClass = 0 
+					end
 				end,},
 				{Type = 45,Variant = 10,SubType = 3,should_delay = true,special_morph = {Variant = 0,},center_pos = true,special_work = function(pos) 
 					local room = Game():GetRoom()
@@ -879,8 +913,10 @@ local item = {
 						end
 					end
 					local grid = Isaac.GridSpawn(GridEntityType.GRID_PIT,0,room:GetGridPosition(room:GetGridIndex(pos)),true):ToPit()
-					grid:UpdateCollision()
-					grid:PostInit()
+					if grid then
+						grid:UpdateCollision()
+						grid:PostInit()
+					end
 				end,},
 			},
 		},

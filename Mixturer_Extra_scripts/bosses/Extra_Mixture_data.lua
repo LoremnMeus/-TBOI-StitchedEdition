@@ -19,6 +19,7 @@ local item = {
             --no_conduct条件下，is_multi表现与can_multi一致，不对本身的拷贝进行复制。
             --非no_conduct条件下，复制后生成结果必然是no_conduct条件。
             larry = true,
+            NotSelf = true,
             swap_weight = 5,      --用于指导位置所占用的offset强度。5意味着极高。
             is_offset = true,       --这个参数让其offset作为基础值而不是参与作差。（需要保证这个值不会变化）
             order = function(ent) if ent.ParentNPC then return 999 else return -1 end end,
@@ -27,7 +28,7 @@ local item = {
             check_parent = true,        --!!这个标签是做什么用的？
             follow_gridcollision = function(ent,tgent)      --需要保证，无缝合的体节也能跟随
                 local room = Game():GetRoom()
-                if (tgent.Position - room:GetClampedPosition(tgent.Position,-20)):Length() > 0.1 then return true end
+                if ent.ParentNPC and (tgent.Position - room:GetClampedPosition(tgent.Position,-20)):Length() > 0.1 then return true end
             end,
             protect_pos = true,
             delta_pos = function(ent) 
@@ -191,9 +192,10 @@ local item = {
                 return 9
             end,
             order = function(ent)
-                if ent.State == 8 then return -2
-                elseif ent.State == 7 then return 2
-                else return 0 end
+                local s = ent:GetSprite() local anim = s:GetAnimation()
+                if (anim == "JumpUp" and s:WasEventTriggered("Jump")) or (anim == "JumpDown" and s:WasEventTriggered("Land") ~= true) then return 2 end
+                if ent.State == 8 then return -2    
+                else return -0.25 end
             end,
         },
         [9] = {
@@ -282,6 +284,7 @@ local item = {
         [20] = {
             level = 3,
             check = 8,
+            Catch_Laser = true,
         },
         [21] = {
             check = 20,
@@ -407,18 +410,30 @@ local item = {
             strength = 90,
             rnds = 0.75,
             order = -0.75,
-            only_split = 0.5,
+            spawn_power = 1,
+            only_split = function(se,sinfo,iinfo)
+                local rate = sinfo.spawn_power or 1
+                local ret = 0.5
+                if iinfo then
+                    if iinfo.is_multi then ret = ret * (1 - rate) + rate * 0.1 end
+                    if iinfo.can_multi then ret = ret * (1 - rate) + rate * 0.2 end
+                end
+                return ret
+            end,
         },
         [41] = {
             check = 40,
+            spawn_power = 0.7,
             strength = 60,
         },
         [42] = {
             check = 40,
+            spawn_power = 0.4,
             strength = 30,
         },
         [43] = {
             check = 40,
+            spawn_power = 0.2,
             strength = 10,
         },
         [44] = {
@@ -627,7 +642,9 @@ local item = {
         [61] = {
             level = 4,
             check = 59,
-            no_morph_spawner = true,
+            Force_Not_Spawn_Info = function(ent,es)
+                if es.Type == 65 then return true end
+            end,
         },
         [62] = {
             level = 3,
@@ -661,6 +678,7 @@ local item = {
             level = 4,
             order = -0.75,
             strength = 5,
+            --NotSpawn = true,
         },
         [67] = {
             check = 66,
@@ -797,6 +815,7 @@ local item = {
             end,
         },
         [82] = {
+            need_multi = {2,},
             level = 4,
             check = 81,
         },
@@ -804,7 +823,16 @@ local item = {
             level = 2,
             Replace_with_sprite = true,
             is_offset = true,
-            only_split = 0.5,
+            spawn_power = 1,
+            only_split = function(se,sinfo,iinfo)
+                local rate = sinfo.spawn_power or 1
+                local ret = 0.5
+                if iinfo then
+                    if iinfo.is_multi then ret = ret * (1 - rate) + rate * 0.1 end
+                    if iinfo.can_multi then ret = ret * (1 - rate) + rate * 0.2 end
+                end
+                return ret
+            end,
             check_all_type = true,
             protect_self = true,
         },
@@ -818,6 +846,7 @@ local item = {
         [86] = {
             strength = 30,
             check = 83,
+            spawn_power = 0.6,
         },
         [87] = {
             check = 86,
@@ -830,6 +859,7 @@ local item = {
         [89] = {
             strength = 10,
             check = 83,
+            spawn_power = 0.3,
         },
         [90] = {
             check = 89,
@@ -843,10 +873,12 @@ local item = {
             real_tg_layer = {0,},
             Replace_with_sprite = true,
             swap_weight = function(ent) 
-                return 9
+                local s = ent:GetSprite() local anim = s:GetAnimation()
+                if (anim == "JumpUp" and s:WasEventTriggered("Jump")) or (anim == "JumpDown" and s:WasEventTriggered("Land") ~= true) then return 9 end
             end,
             order = function(ent,info) 
-                if ent.State == 6 or ent.State == 7 then return 2 end
+                local s = ent:GetSprite() local anim = s:GetAnimation()
+                if (anim == "JumpUp" and s:WasEventTriggered("Jump")) or (anim == "JumpDown" and s:WasEventTriggered("Land") ~= true) then return 2 end
             end,
         },
         [93] = {
@@ -871,23 +903,23 @@ local item = {
                     },
                 },
             },
+            --[[
             special = function(ent)
                 if Game():GetFrameCount() % 15 == 5 then 
                     local enemies = auxi.getallenemies() 
                     local allents = auxi.getothers(nil,78)
-                    print(#allents)
+                    --print(#allents)
                     local tgs = collector.search_for_linkage(ent,nil,nil,{check_parent = true,take_linker = true,stack = allents,})
-                    print(#tgs)
-                    print(#enemies)
+                    --print(#tgs)
+                    --print(#enemies)
                     if #tgs >= #enemies then
-                        print("Try Update")
+                        --print("Try Update")
                         delay_buffer.addeffe(function()
                             collector.update_npc(ent,nil,(EntityFlag.FLAG_FRIENDLY | EntityFlag.FLAG_PERSISTENT | EntityFlag.FLAG_CHARM | EntityFlag.FLAG_NO_TARGET)) 
                         end,{},1)
                     end
                 end
             end,
-            --[[
             special = function(ent) --!!只能手写旋转硫磺火了
                 --if ent.V1.X <= -50 then print("Update") collector.update_npc(ent) end
                 if ent.HitPoints/ent.MaxHitPoints < 0.4 and ent.FrameCount % 60 == 1 then
@@ -988,6 +1020,9 @@ local item = {
                     },
                 },
             },
+            Force_Spawn_Info = function(ent,es)
+                if es.Type == 79 then return true end
+            end,
         },
         [103] = {
             check = 102,
@@ -1029,14 +1064,21 @@ local item = {
                     },
                 },
             },
+            Force_Spawn_Info = function(ent,es)
+                if es.Type == 79 then return true end
+            end,
         },
         [106] = {
             level = 2,
             NotSpawn = true,
+            NoKill = true,
             order = function(ent)
                 local anim = ent:GetSprite():GetAnimation()
                 if anim == "Attack01" then return -2
                 else return -1 end
+            end,
+            Force_Spawn_Info = function(ent,es)
+                if es.Type == 79 then return true end
             end,
         },
         [107] = {   --!!恶魔会在到处出现，不过一般还是属于第3层比较多
@@ -1260,6 +1302,7 @@ local item = {
         },
         [118] = {
             check = 117,
+            can_multi = true,
             alt = true,
         },
         [119] = {
@@ -1302,9 +1345,8 @@ local item = {
             level = 2,
             check = 120,
         },
-        [124] = {       --需要处理，长腿爸爸生成的腿不被转化
+        [124] = {
             level = 4,
-            no_morph_spawner = true,
             real_tg_layer = function(s,isoverlay)
                 local anim = s:GetAnimation()
                 if anim == "StompArm" or anim == "StompLeg" then        --这两个动画需要去掉
@@ -1505,6 +1547,10 @@ local item = {
         },
         [149] = {
             level = 3,
+            KeepTarget = function(ent)
+                local s = ent:GetSprite() local anim = s:GetAnimation() local fr = s:GetFrame()
+                if anim == "JumpLoop" or anim == "Landing" then return true end
+            end,
             swap_weight = function(ent) 
                 if ent.State == 7 or ent.State == 6 then return 9 end
             end,
@@ -1669,13 +1715,14 @@ local item = {
         [165] = {
             level = 6,
             naturally_move_back = 0.3,
-            protect_self = true,
+            --protect_self = true,
             NoMulti = true,
             Nature_Spawner = 1,
+            should_release = true,
             clear_another = true,
             check_all_type = true,
             special = function(ent)
-                if ent.State == 13 and Game():GetFrameCount() % 15 == 5 then 
+                if ent.State == 13 and Game():GetFrameCount() % 30 == 5 then 
                     local enemies = auxi.getallenemies() 
                     local allents = auxi.getothers(nil,274)
                     --print(#allents)
@@ -1688,8 +1735,25 @@ local item = {
                     end
                 end
             end,
+            special_All = function(ent,info)
+                auxi.check_if_any(info.special,ent)
+                local d = ent:GetData()
+                if ent.Type == 274 then
+                    if d[own_key.."UnInit"] == nil then
+                        d[own_key.."Init"] = true
+                    end
+                elseif d[own_key.."Init"] and ent.Type == 275 and ent:GetSprite():GetAnimation() ~= "Appear" then
+                    local base = require("Mixturer_Extra_scripts.others.Base_holder")
+                    base.init(nil,ent)
+                    d[own_key.."Init"] = nil
+                end
+                d[own_key.."UnInit"] = true
+            end,
             special_damage = function(ent,amt,flag,source,cooldown,tent)
                 if tent.State == 13 then return false end
+            end,
+            order = function(ent)
+                if ent.State == 2 then return 999 end
             end,
             --l local tgs = Isaac.GetRoomEntities() for u,v in pairs(tgs) do if v.Type == 869 then v = v:ToNPC() print(v.State) print(v:GetSprite():GetAnimation()) print(v.I1.." "..v.I2) print(v.V1) print(v.V2) print(v:GetSprite():GetFrame()) print(v.TargetPosition) end end
             --l local tgs = Isaac.GetRoomEntities() local v1 = nil for u,v in pairs(tgs) do if v.Type == 20 and v.Variant == 0 then v1 = v:ToNPC() break end end local v2 = nil for u,v in pairs(tgs) do if v.Type == 78 and v.Variant == 0 then v2 = v:ToNPC() break end end local i_flag = EntityFlag.FLAG_FRIENDLY | EntityFlag.FLAG_PERSISTENT | EntityFlag.FLAG_CHARM | EntityFlag.FLAG_FREEZE | EntityFlag.FLAG_NO_SPRITE_UPDATE if v1 and v2 then v1:AddEntityFlags(i_flag) Game():GetRoom():Update() v1:ClearEntityFlags(i_flag) v1.Target = nil end
@@ -1699,10 +1763,9 @@ local item = {
         },
         [166] = {
             level = 6,
+            clear_another = true,
+            reload = true,
             naturally_move_back = 0.3,
-            Force_Spawn_Info = function(ent,es)
-                if es.Type == 274 then return true end
-            end,
             on_death = function(ent)
                 ent:Remove()
             end,
@@ -1817,6 +1880,7 @@ local item = {
         },
         [179] = {
             level = 6,
+            clear_another = true,
             real_tg_layer = function(s,isoverlay)
                 local anim = s:GetAnimation() if isoverlay then anim = s:GetOverlayAnimation() end
                 if anim == "WalkingUp" or anim == "ShootUp" or anim == "Guarding" or string.sub(anim,1,10) == "GuardFlash" then return {0,} end
@@ -1835,6 +1899,7 @@ local item = {
         },
         [181] = {
             level = 6,
+            clear_another = true,
             Force_Spawn_Info = function(ent,es)
                 if es.Type == 102 then return true end
             end,
@@ -1871,6 +1936,9 @@ local item = {
             level = 3,
             check = 151,
             Catch_Laser = true,
+            Force_Spawn_Info = function(ent,es)
+                if es.Type == 265 then return true end
+            end,
             KeepTarget = function(ent)
                 local s = ent:GetSprite() local anim = s:GetAnimation() local fr = s:GetFrame()
                 if anim == "JumpLoop" or anim == "Landing" then return true end
@@ -1922,6 +1990,7 @@ local item = {
         },
         [185] = {
             level = 6,
+            clear_another = true,
             Recheck = function(ent)
                 local mix = require("Mixturer_Extra_scripts.bosses.Boss_Mixturer")
                 local s = ent:GetSprite() local filename = s:GetFilename()
@@ -1941,6 +2010,7 @@ local item = {
                 end
                 ret.KeepUpdate = true
                 ret.reload = true
+                --ret.clear_another = true
                 local prev_load = ret.load_anm2
                 ret.load_anm2 = function(id,ent,prefix,info) 
                     local base_data = info.anm2_data
@@ -2344,7 +2414,9 @@ local item = {
         [205] = {
             level = 6,
             Replace_with_sprite = true,
+            clear_another = true,
             protect_self = true,
+            --is_offset = true,
             set_anm2 = {0,1,2,3,},
             special = function(ent)
                 --ent.PositionOffset = Vector(0,0)
@@ -2353,6 +2425,21 @@ local item = {
                     v.EntityCollisionClass = 0
                     v.Size = 10
                 end
+            end,
+            special_All = function(ent,info)
+                local d = ent:GetData()
+                if ent.Variant == 0 then
+                    if d[own_key.."UnInit"] == nil then
+                        d[own_key.."Init"] = true
+                    end
+                elseif ent.Variant == 10 then
+                    if d[own_key.."Init"] then 
+                        local base = require("Mixturer_Extra_scripts.others.Base_holder")
+                        base.init(nil,ent)
+                        d[own_key.."Init"] = nil
+                    end
+                end
+                d[own_key.."UnInit"] = true
             end,
             KeepTarget = true,
             order = -1,
@@ -2365,6 +2452,7 @@ local item = {
         [206] = {
             level = 6,
             reload = true,
+            clear_another = true,
             Force_Spawn_Info = function(ent,es)
                 if es.Type == 912 then return true end
             end,
@@ -2696,7 +2784,12 @@ local item = {
         },
         [222] = {       --!!似乎还有bug
             level = 6,
-            DontSpawn = true,
+            DontSpawn = function(ent)
+                local d = ent:GetData()
+                if d[own_key.."Init"] then return false end
+                return true
+            end,
+            clear_another = true,
             special = function(ent,ment,is_main,info)
                 local tgs = auxi.getothers(nil,951,1)
                 for u,v in pairs(tgs) do
@@ -2724,6 +2817,21 @@ local item = {
                         if d[own_key.."skip_dash"] <= 0 then d[own_key.."skip_dash"] = nil end
                     end
                  end
+            end,
+            special_All = function(ent)
+                local d = ent:GetData()
+                if ent.State == 16 then
+                    if d[own_key.."UnInit"] == nil then
+                        d[own_key.."Init"] = true
+                    end
+                else
+                    if d[own_key.."Init"] then 
+                        local base = require("Mixturer_Extra_scripts.others.Base_holder")
+                        base.init(nil,ent)
+                        d[own_key.."Init"] = nil
+                    end
+                end
+                d[own_key.."UnInit"] = true
             end,
             force_move = function(ent)
                 ent:GetSprite():Play("MoveEndTurn",true)
@@ -2778,7 +2886,7 @@ local item = {
             const_spawner = true,
             --is_offset = true,
             order = function(ent)
-                --if ent.State == 13 then return 5 end
+                if ent.State == 2 then return 999 end
             end,
         },
         [229] = {
@@ -2795,12 +2903,27 @@ local item = {
         [231] = {
             level = 2.5,
             NotSpawn = true,
+            DontSpawn = true,
             KeepTarget = true,
             order = -2,
             NoKill = true,
             stone = true,
             Nature_Spawner = 1,
             HitPoints = 300,
+            special = function(ent)
+                if Game():GetFrameCount() % 15 == 5 then 
+                    local enemies = auxi.getallenemies() 
+                    local allents = auxi.getothers(nil,907)
+                    --print(#allents)
+                    local tgs = collector.search_for_linkage(ent,nil,nil,{check_parent = true,take_linker = true,stack = allents,})
+                    --print(#tgs)
+                    --print(#enemies)
+                    if #tgs >= #enemies then
+                        --print("Try Update")
+                        collector.update_npc(ent) 
+                    end
+                end
+            end,
         },
     },
     [2] = {
@@ -3171,7 +3294,7 @@ local item = {
             Catch_Laser = true,
             real_tg_layer = {1,0,},
             rnds = 0.3,
-            order = -2,
+            order = -1.5,
         },
         [50] = {
             check = 49,
@@ -3466,7 +3589,6 @@ local item = {
             spider = true,
         },
         [82] = {
-            need_multi = {2,},
             level = 2,
             swap_weight = function(ent)
                 local s = ent:GetSprite() local anim = s:GetAnimation()
@@ -3721,6 +3843,9 @@ local item = {
         [124] = {
             level = 3,
             HideAll = true,
+            Force_Not_Spawn_Info = function(ent,es)
+                if es.Type == 101 then return true end
+            end,
             set_visible = function(ent) 
                 local s = ent:GetSprite() local anim = s:GetAnimation() local fr = s:GetFrame()
                 if anim:sub(1,6) == "Appear" and fr <= 5 then return false end
@@ -3766,7 +3891,7 @@ local item = {
         [128] = {
             need_multi = {1,2,3,4,5,},
             check = 16,
-            order = -0.5,
+            order = -0.15,
         },
         [129] = {
             level = 2,
@@ -4235,6 +4360,46 @@ local item = {
         [200] = {
             check = 147,
             real_tg_layer = {0,1,},
+            CoverDetail = {
+                [0] = {
+                    [10] = {
+                        st = 6,
+                        ed = 24,
+                    },
+                    [11] = {
+                        st = 6,
+                        ed = 24,
+                    },
+                    [12] = {
+                        st = 6,
+                        ed = 24,
+                    },
+                    [13] = {
+                        st = 6,
+                        ed = 24,
+                    },
+                    [14] = {
+                        st = 6,
+                        ed = 24,
+                    },
+                    [15] = {
+                        st = 6,
+                        ed = 24,
+                    },
+                    [16] = {
+                        st = 6,
+                        ed = 24,
+                    },
+                    [17] = {
+                        st = 6,
+                        ed = 24,
+                    },
+                    [22] = {
+                        st = 6,
+                        ed = 24,
+                    },
+                },
+            }
         },
         [201] = {
             swap_weight = 9,
@@ -4503,6 +4668,18 @@ local item = {
         [232] = {
             level = 2.5,
             check = 33,
+            special = function(ent,ment,is_main,info)
+                local d = ent:GetData()
+                local s = ent:GetSprite() local anim = s:GetAnimation() local fr = s:GetFrame()
+                if anim == "Idle" then
+                    d[own_key.."skip_dash"] = (d[own_key.."skip_dash"] or 0) + 1
+                    if d[own_key.."skip_dash"] > 240 then info.force_move(ent) end
+                else d[own_key.."skip_dash"] = nil end
+            end,
+            force_move = function(ent)
+                ent.State = 8
+                ent:GetSprite():Play("Shoot",true)
+            end,
         },
         [233] = {
             level = 3,
@@ -5209,7 +5386,8 @@ local item = {
         },
         [331] = {
             level = 1.5,
-            strength = 10,
+            NotSpawn = true,
+            strength = 0.1,
             order = -2,
             KeepTarget = true,
         },
@@ -5424,8 +5602,10 @@ local item = {
             real_tg_layer = {1,0,},
         },
         [357] = {
+            NotSelf = true,
             need_multi = {2,3,4,},
             --can_multi = true,
+            NoMulti = true,
             order = function(ent) if ent.ParentNPC then return 0.5 else return -0.5 end end,
             check = 16,
         },
@@ -5574,11 +5754,12 @@ local item = {
         },
         [372] = {
             --!! 小pin，好像也很难修
-            NotSpawn = true,
-            DontSpawn = true,
+            --NotSpawn = true,
+            --DontSpawn = true,
             level = 2,
-            --DontLoad = true,
-            Replace_with_sprite = true,
+            anm2_name = "881.000_needle_replace",
+            set_anm2 = {0,1,2,3,},
+            --Replace_with_sprite = true,
             set_visible = function(ent) 
                 local s = ent:GetSprite() local anim = s:GetAnimation() local fr = s:GetFrame()
                 if ent.State == 3 and (anim == "Idle" or anim == "IdleBack") then return false end
@@ -5592,10 +5773,27 @@ local item = {
                 return 1
             end,
             HideAll = true,
+            CoverDetail = {
+                [0] = {
+                    [5] = {
+                        st = 13,
+                        ed = 25 - 7 + 13,
+                    },
+                },
+            },
         },
         [373] = {
             level = 2.5,
+            anm2_name = "881.001_pasty_replace",
             check = 372,
+            CoverDetail = {
+                [0] = {
+                    [5] = {
+                        st = 13,
+                        ed = 23 - 7 + 13,
+                    },
+                },
+            },
         },
         [374] = {
             level = 2.5,
@@ -5626,6 +5824,7 @@ local item = {
         },
         [376] = {
             need_multi = {2,3,4,},
+            NoMulti = true,
             --can_multi = true,
             --KeepTarget = true,
             order = function(ent,info)

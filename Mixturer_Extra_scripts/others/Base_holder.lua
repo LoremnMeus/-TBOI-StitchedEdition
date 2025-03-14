@@ -40,16 +40,28 @@ local item = {
 			"mixforcetag clear",
 			"mixhprate clear",
 		},
+		["baby"] = {
+			"mixsetmode default",
+			"mixhardlevel -1",
+			"mixforcetag noboss 1",
+			"mixchance 0.5",
+			"mixspawner 0",
+			"mixspawneronkill 0",
+			"mixhprate main 1",
+			"mixhprate nomain 0",
+		},
 		["chaos"] = {
+			"mixsetmode default",
 			"mixhardlevel 10",
 			"mixforcetag boss 0.8",
 			"mixforcetag noboss 1",
 			"mixhprate main 1",
-			"mixhprate nomain 1",
+			"mixhprate nomain 0",
 		},
 		["envy"] = {
+			"mixsetmode default",
 			"mixforce 51 51.10 51.20 51.1 51.11 51.21",
-			--"mixspawneronkill 51-1 51.10-1 51.20-1 51.1-1 51.11-1 51.21-1",
+			"mixspawneronkill 51-1 51.10-1 51.20-1 51.1-1 51.11-1 51.21-1",
 			--"mixsamespawner 51-1 51.10-1 51.20-1 51.1-1 51.11-1 51.21-1",
 			"mixhprate main 1",
 			"mixhprate nomain 0",
@@ -67,8 +79,7 @@ function item.get_all_tags()
 end
 
 --在这里处理敌人的生成/替换工作
-table.insert(item.ToCall,#item.ToCall + 1,{CallBack = ModCallbacks.MC_POST_NPC_INIT, params = nil,
-Function = function(_,ent)
+function item.init(_,ent)
 	if mix.invisible_flag ~= true and item.Stop ~= true then	-- and Game():GetRoom():GetFrameCount() <= 0
 		if ent.Type ~= 463 then
 			local room = Game():GetRoom()
@@ -81,6 +92,7 @@ Function = function(_,ent)
 				local seinfo = mix.fast_search("Left",se.Type,se.Variant,se.SubType)
 				local force_spawn = nil
 				local sed = se:GetData()
+				--print(se.Type.." "..se.Variant)
 				if sed[mix.own_key.."rlinkee"] then 
 					--is_death_trigger = true
 					another_id = sed[mix.own_key.."rlinkee"].anotherid
@@ -97,16 +109,16 @@ Function = function(_,ent)
 
 				if auxi.check_if_any(info.Force_Spawn_Info,ent,se) then force_spawn = true end
 
+				local ininfo = mix.targets["Left"][infoid] or {}
+				local iinfo = mix.targets["Left"][another_id] or {}
 				if seinfo.only_split then 
-					tbl.mixspawneronkill = auxi.check_if_any(seinfo.only_split,se) 
+					tbl.mixspawneronkill = auxi.check_if_any(seinfo.only_split,se,seinfo,iinfo) 
 				end
 				if seinfo.Nature_Spawner then 
 					tbl.mixspawner = auxi.check_if_any(seinfo.Nature_Spawner,se) 
 					still_spawn = true
 				end
 				if another_id and infoid then
-					local ininfo = mix.targets["Left"][infoid]
-					local iinfo = mix.targets["Left"][another_id]
 					--local entry = tostring(iinfo.type).."."..tostring(iinfo.variant).."."..tostring(iinfo.subtype)
 					local entry = tostring(ininfo.type).."."..tostring(ininfo.variant).."."..tostring(ininfo.subtype)
 					for u,v in pairs(item.DefaultValue) do
@@ -118,7 +130,8 @@ Function = function(_,ent)
 				end
 				
 				if not another_id and not still_spawn then succ = false end
-				if seinfo.clear_another then another_id = nil end
+				if iinfo.clear_another then another_id = nil end
+				if seinfo.Nature_Spawner then another_id = nil end
 				if auxi.random_1() > tbl.mixsamespawner then another_id = nil end
 				--print("Deathtrigger:"..tostring(is_death_trigger))
 				nomainspawn = true
@@ -128,6 +141,7 @@ Function = function(_,ent)
 				else 
 					if auxi.random_1() > tbl.mixspawner then succ = false end
 				end
+				if auxi.check_if_any(info.Force_Not_Spawn_Info,ent,se) then succ = false end
 			end
 			--if succ then print("succ1 "..ent.Type) end
 			if succ and info.NoKill and room:GetFrameCount() <= 0 and room:IsClear() then succ = false end
@@ -146,15 +160,21 @@ Function = function(_,ent)
 				end
 			end
 			--if succ then print("succ2 "..ent.Type) end
-			if auxi.random_1() > (save.ControlData.mixchance or 1) then succ = false end
+			save.ControlData.mixchance = save.ControlData.mixchance or {global = 1,}
+			local mixchance = save.ControlData.mixchance.global or 1
+			if auxi.random_1() > mixchance then succ = false end
 			if succ then
-				--print("Try Spawn "..ent.Type)
+				--print("Try Spawn "..ent.Type.." "..ent.Variant.." "..ent.SubType)
 				mix.generate_mixture(ent,{tg = auxi.choose("Left","Right"),spawn_once = true,make_another = true,another_infoid = another_id,nomainspawn = nomainspawn,})		--no_conduct = true,
 			end
 			--end
+		else
 		end
 	end
-end,
+end
+
+table.insert(item.ToCall,#item.ToCall + 1,{CallBack = ModCallbacks.MC_POST_NPC_INIT, params = nil,
+Function = item.init,
 })
 
 function item.check_lr(str)
@@ -216,7 +236,7 @@ function item.parse_entity_command(params, default_chance)
     return settings
 end
 
-function item.execute_command(_,cmd,params)
+function item.execute_command(_,cmd,params,NoPrint)
 	if string.lower(cmd) == "mix" and params ~= nil then
 		local args={}
 		for str in string.gmatch(params, "([^ ]+)") do
@@ -243,7 +263,7 @@ function item.execute_command(_,cmd,params)
 		local clampedChance = math.min(math.max(chance, 0), 1)  -- Clamp between 0 and 1
 		
 		-- Save setting
-		save.ControlData.mixchance = clampedChance
+		save.ControlData.mixchance = {global = clampedChance,}
 		
 		-- Output feedback with range and default info
 		if chance == clampedChance then
@@ -280,7 +300,7 @@ function item.execute_command(_,cmd,params)
 		end
 		
 		local level = tonumber(args[1] or 0)
-		local clampedLevel = math.max(level, 0)  -- Minimum value is 0
+		local clampedLevel = math.max(level, -10)  -- Minimum value is -10
 		
 		save.ControlData.mixhardlevel = clampedLevel
 		
@@ -290,10 +310,16 @@ function item.execute_command(_,cmd,params)
 			print("Base level adjusted to match hard level: " .. clampedLevel)
 		end
 		
+		-- Check and adjust hardlevel if necessary
+		if save.ControlData.mixbaselevel and clampedLevel < save.ControlData.mixbaselevel then
+			save.ControlData.mixbaselevel = clampedLevel
+			print("Base level adjusted to match hard level: " .. clampedLevel)
+		end
+
 		if level == clampedLevel then
-			print("Hard level set to: " .. clampedLevel .. " (Minimum value: 0, Default: 0)")
+			print("Hard level set to: " .. clampedLevel .. " (Minimum value: -10, Default: 0)")
 		else
-			print("Input value out of range! Adjusted to: " .. clampedLevel .. " (Minimum value: 0, Default: 0)")
+			print("Input value out of range! Adjusted to: " .. clampedLevel .. " (Minimum value: -10, Default: 0)")
 		end
 	end
 
@@ -805,7 +831,11 @@ function item.execute_command(_,cmd,params)
 			for u,v in pairs(item.CommandLists[tg]) do
 				Isaac.ExecuteCommand(v)
 			end
-			print("Loaded default mode: "..tg)
+			if tg == "default" then
+				print("Set back to default")
+			else
+				print("Now loaded default mode: "..tg)
+			end
 		elseif save.ControlData.RecordList and save.ControlData.RecordList[tg] then
 			-- Backup current RecordList
 			local currentRecordList = save.ControlData.RecordList

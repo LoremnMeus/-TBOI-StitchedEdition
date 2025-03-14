@@ -133,16 +133,29 @@
     mixforcetag boss 0.8
     mixforcetag noboss 1
     mixhprate main 1
-    mixhprate nomain 1
+    mixhprate nomain 0
+    ```
+- `baby`模式
+  - 宝宝专属，难度极低。
+  - 包含以下设置：
+    ```bash
+    mixhardlevel -1
+    mixforcetag noboss 1
+    mixchance 0.5
+    mixspawner 0
+    mixspawneronkill 0
+    mixhprate main 1
+    mixhprate nomain 0
     ```
 - `envy`模式
   - 堕胎的最爱
   - 包含以下设置：
     ```bash
     mixforce 51 51.10 51.20 51.1 51.11 51.21
+    mixspawneronkill 51-1 51.10-1 51.20-1 51.1-1 51.11-1 51.21-1
     mixhprate main 1
     mixhprate nomain 0
     ```
-   -嫉妒等纯分裂怪死亡时继承概率默认设置为0.4，不受全局影响，但依然可指定调控。用法：
+   -嫉妒等纯分裂怪死亡时继承概率默认设置为0.4，不受全局影响，但仍可指定调控。用法如下：
     mixspawneronkill 51-1 51.10-1 51.20-1 51.1-1 51.11-1 51.21-1
     mixsamespawner 51-1 51.10-1 51.20-1 51.1-1 51.11-1 51.21-1

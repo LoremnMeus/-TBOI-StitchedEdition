@@ -217,7 +217,7 @@ function funct.getallenemies(ents,checker)
 	ents = ents or Isaac.GetRoomEntities()
 	local ret = {}
     for _, v in ipairs(ents) do
-        if v:ToNPC() and v:IsEnemy() and funct.check_if_any(checker,ent) then
+        if v:ToNPC() and v:IsEnemy() and v:ToNPC().CanShutDoors and funct.check_if_any(checker,ent) then
             table.insert(ret,v)
         end
     end
